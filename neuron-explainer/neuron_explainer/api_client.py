@@ -116,6 +116,8 @@ class ApiClient:
     async def make_request(
         self, timeout_seconds: Optional[int] = None, **kwargs: Any
     ) -> dict[str, Any]:
+        print("=== make_request called with kwargs ===")
+        print(kwargs)
         if self._cache is not None:
             key = orjson.dumps(kwargs)
             if key in self._cache:
@@ -126,10 +128,23 @@ class ApiClient:
             http_client = await stack.enter_async_context(
                 httpx.AsyncClient(timeout=timeout_seconds)
             )
+            print("OAO1")
             # If the request has a "messages" key, it should be sent to the /chat/completions
             # endpoint. Otherwise, it should be sent to the /completions endpoint.
-            url = BASE_API_URL + ("/chat/completions" if "messages" in kwargs else "/completions")
+            #url = BASE_API_URL + ("/chat/completions" if "messages" in kwargs else "/completions")
+            # 根据模型类型判断接口
+            chat_models = ["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"]
+            if self.model_name in chat_models:
+                url = BASE_API_URL + "/chat/completions"
+                # 如果用户只传 prompt，就包装成 messages
+                if "messages" not in kwargs and "prompt" in kwargs:
+                    kwargs["messages"] = [{"role": "user", "content": kwargs.pop("prompt")}]
+            else:
+                url = BASE_API_URL + "/completions"
             kwargs["model"] = self.model_name
+            # 对参数再做修改，这里
+            print("OAO2")
+            print("final kwargs:", kwargs)
             response = await http_client.post(url, headers=API_HTTP_HEADERS, json=kwargs)
         # The response json has useful information but the exception doesn't include it, so print it
         # out then reraise.
