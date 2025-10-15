@@ -329,7 +329,7 @@ class ExplanationNeuronSimulator(NeuronSimulator):
         prompt = self.make_simulation_prompt(tokens)
 
         generate_kwargs: dict[str, Any] = {
-            "max_tokens": 0,
+            "max_tokens": 1,
             "echo": True,
             "logprobs": 15,
         }
